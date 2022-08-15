@@ -118,7 +118,7 @@ server <- function(input, output, session) {
       mutate(text = clean.text(text),
              link = paste0("https://doi.org/", doi)) %>%
       ungroup()
-    # abstracts_df <<- read_rds(here::here('model/abstracts_df.rds'))
+    # abstracts_df <<- read_rds(here::here('data/abstracts_df.rds'))
     # Sys.sleep(1)
     
     # Update the waiter to show that text is being analyzed now
@@ -126,7 +126,7 @@ server <- function(input, output, session) {
     
     # Get tokens
     tokens <<- tokenize.text(abstracts_df)
-    # tokens <<- read_rds(here::here('model/tokens.rds'))
+    # tokens <<- read_rds(here::here('data/tokens.rds'))
     
     # Get TF-IDF 
     tfidf <- tokens %>% 
