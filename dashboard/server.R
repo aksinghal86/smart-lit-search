@@ -12,8 +12,10 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$range, { 
-    if (input$range == 'custom') 
-      shinyjs::toggle('custom-range-options')
+    if (input$range == 'custom')
+      shinyjs::show('custom-range-options')
+    else 
+      shinyjs::hide('custom-range-options')
   })
   
   
@@ -36,7 +38,7 @@ server <- function(input, output, session) {
   
   analyze_wait_screen <- div(
     h4('Creating your smart search'),
-    h4('This may take a few seconds'),
+    h4('This may take up to a minute'),
     spin_3circles(), 
     br(), 
     br(), 
@@ -144,8 +146,9 @@ server <- function(input, output, session) {
     
     # TODO: refine the number of clusters (k)
     records <- nrow(abstracts_df)
-    k <- case_when(records <= 100 ~ ceiling(records/10), 
-                   TRUE ~ 10)
+    k <- case_when(records <= 120 ~ ceiling(records/15), 
+                   TRUE ~ 8)
+
     hc <- factoextra::hcut(dist_mat, k = k, stand = T, method = 'ward.D2') 
     
     cluster_summary <<- get.cluster.summary(dtm, hc)
@@ -206,7 +209,7 @@ server <- function(input, output, session) {
              )
     
     plt <- ggplot(plotdata, aes(x = x, y = y, color = cluster)) + 
-      geom_point_interactive(aes(tooltip = tooltip, data_id = document, onclick = onclick), alpha = 0.7, size = 5) +
+      geom_point_interactive(aes(tooltip = tooltip, data_id = document, onclick = onclick), alpha = 0.7, size = 4) +
       ggforce::geom_mark_hull(aes(label = cluster), size = 0.3)+
       scale_color_brewer(palette = 'Dark2') +
       theme_void() + 
@@ -241,7 +244,7 @@ server <- function(input, output, session) {
                ), 
                tags$div(
                  class = 'jabstract', 
-                 substr(abstract, 1, 250), tags$span(class = 'ellipsis', '...'), 
+                 substr(abstract, 1, 300), tags$span(class = 'ellipsis', '...'), 
                ),
                tags$div(
                  class = paste0('terms '),

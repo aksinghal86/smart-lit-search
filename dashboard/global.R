@@ -5,8 +5,8 @@ pacman::p_load(
   shiny,  
   waiter, # for loading screen
   tippy, # for tooltips
-  #promises, # ASYNC
-  future, # ASYNC
+  # promises, # ASYNC
+  # future, # ASYNC
   easyPubMed, # Pubmed search 
   tidyverse, 
   tidytext, # for text processing
