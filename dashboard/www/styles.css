@@ -1,0 +1,59 @@
+body { 
+  font-family: Raleway, sans-serif;
+  line-height: 1.5;
+}
+
+.results { 
+  margin-right: auto; 
+  margin-left: auto;
+  padding-left: 10px; 
+  padding-right: 10px;
+}
+
+#results-table { 
+  overflow: scroll;
+  padding-right: 10px;
+  margin: 1px;
+  background-color: #fff;
+  height:100vh;
+}
+
+.table-text {
+  font-family: Raleway, sans-serif; 
+  padding: 1px; 
+  margin-bottom: 5px;
+  background-color: #fff; 
+  letter-spacing: .2px;
+}
+
+.jtitle { 
+  font-weight: 900;
+  color: #339ff4; 
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.jauthors { 
+  font-weight: 900; 
+  font-size: 11px;
+}
+
+.jyear { 
+  font-weight: 900; 
+  font-size: 11px; 
+  color: #009933;
+}
+
+.jabstract { 
+  line-height: 1.5;
+  font-size: 11px;
+  margin-top: 5px;
+}
+
+.terms { 
+  display: inline-block;
+  padding: 0.125rem 0.75rem; 
+  border-radius: 15px;
+  font-weight: 400; 
+  font-size: 0.90rem;
+}

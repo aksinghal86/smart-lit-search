@@ -1,3 +1,11 @@
+# Data files
+data/
+
+# NLP files
+bipartiteD3*.*
+english-ewt-ud*.*
+vizjs.js*
+
 # History files
 .Rhistory
 .Rapp.history
