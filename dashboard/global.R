@@ -1,4 +1,5 @@
 if (!require(pacman)) install.packages('pacman')
+# if (!require(particlesjs)) devtools::install_github("dreamRs/particlesjs")
 
 pacman::p_load(
   # Shiny and related UI features
@@ -17,9 +18,4 @@ pacman::p_load(
 )
 
 source('functions.R')
-
-# plan(multisession)
-
-api_key <- read_lines(here::here('data/ncbi-key.txt'))
-
-# PFOA or 'perfluorooctanoic acid' and 'cancer'
+api_key <- read_lines('assets/ncbi-key.txt')

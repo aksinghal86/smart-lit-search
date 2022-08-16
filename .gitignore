@@ -1,5 +1,7 @@
 # Data files
 data/
+dashboard/assets/
+dashboard/rsconnect/
 
 # NLP files
 bipartiteD3*.*

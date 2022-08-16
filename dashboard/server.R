@@ -5,6 +5,7 @@ server <- function(input, output, session) {
   
   observe({ 
     shinyjs::toggleState('submit', condition = input$query != '')
+    if(input$submit == 0) hideTab(inputId = 'tabs', target = 'Results')
   })
   
   observeEvent(input$opts, { 
@@ -257,45 +258,10 @@ server <- function(input, output, session) {
          }
     )
   })
-  # 
-  # output$resultsTable <- renderReactable({
-  #   tabledata <- plotdata %>% 
-  #     group_by(document, cluster) %>% 
-  #     summarize(
-  #       cell_text = paste0(
-  #         title, '<br>',
-  #         authors, '<br>', 
-  #         substr(abstract, 1, 200), '...', '<br>'
-  #         #TODO: turn the dots into interactive element to expand abstract
-  #         #TODO: turn into a link
-  #       )
-  #     )
-  #   # orange_pal <- function(x) rgb(colorRamp(c("#ffe4cc", "#ff9500"))(x), maxColorValue = 255)
-  #   dark2 <- function(x) brewer.pal(length(unique(tabledata$cluster)), 'Dark2')[x]
-  # 
-  #   reactable(
-  #     tabledata, 
-  #     defaultColDef = colDef(
-  # 
-  #       show = F,        
-  #       style = function(value, index) {
-  #         # normalized <- (value - min(tabledata$cluster)) / (max(tabledata$cluster) - min(tabledata$cluster))
-  #         color <- dark2(tabledata$cluster[index])
-  #         list(background = color)
-  #     }),
-  #     columns = list(
-  #       
-  #       cell_text = colDef(name = 'Abstracts', show = T)
-  #     ),
-  #     filterable = T, 
-  #     searchable = T
-  #   )
-  # })
-  
-  
+
   # observe({
-  #   print(input$clusterPlot_selected)
-  #   print(input$n)
-  #   print(input$from)
+  #   # print(input$clusterPlot_selected)
+  #   # print(input$n)
+  #   # print(input$from)
   # })
 }
