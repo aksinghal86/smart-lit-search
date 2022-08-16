@@ -16,7 +16,7 @@ pacman::p_load(
   # reactable # for interactive table
 )
 
-source(here::here('model/functions.R'))
+source('functions.R')
 
 # plan(multisession)
 
