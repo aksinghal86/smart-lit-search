@@ -29,7 +29,7 @@ server <- function(input, output, session) {
   search_wait_screen <- div(
     # style = 'color: gray;',
     h4('Creating your smart search'),
-    h4('This may take a few seconds'),
+    h4('This may take up to a minute'),
     spin_3circles(),
     br(), 
     br(), 
