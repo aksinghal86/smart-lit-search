@@ -8,7 +8,7 @@ clean.text <- function(dirty_text) {
 
 # Use POS to tag text using {cleanNLP}
 annotate.text <- function(df) { 
-  cleanNLP::cnlp_init_udpipe()
+  cleanNLP::cnlp_init_udpipe(model_path = 'assets/english-ewt-ud-2.5-191206.udpipe')
   cleanNLP::cnlp_annotate(input = df, text = 'text', doc_name = 'pmid')  
 }
 

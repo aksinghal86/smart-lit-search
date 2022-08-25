@@ -1,5 +1,10 @@
 server <- function(input, output, session) { 
   
+  rvs <- reactiveValues(
+    top_terms = NULL, 
+    finaldata = NULL
+  )
+  
   shinyjs::hide("options") 
   shinyjs::hide("custom-range-options")
   
@@ -17,12 +22,6 @@ server <- function(input, output, session) {
       shinyjs::show('custom-range-options')
     else 
       shinyjs::hide('custom-range-options')
-  })
-  
-  
-  observeEvent(input$submit, {
-    showTab(inputId = 'tabs', target = 'Results')
-    updateTabsetPanel(session = session, inputId = 'tabs', selected = 'Results')
   })
   
   
@@ -67,6 +66,7 @@ server <- function(input, output, session) {
   
   observeEvent(input$submit, {
     
+    # Create the query
     from <- case_when (
       input$range == 'last-year' ~ Sys.Date() - 365, 
       input$range == 'last-5-years' ~ Sys.Date() - 365*5, 
@@ -88,106 +88,117 @@ server <- function(input, output, session) {
       ' (', from, "[PDAT]", ':', to, "[PDAT]", ')'
     )
     print(query)
-    # Show wait screen
+    
+    # Show the waiter
     w$show()
-    # att$set(40)
-    # att$auto()
-    # 
-    # on.exit({
-    #   att$done()
-    #   w$hide()
-    # })
-    # 
-    # # Get PMIDs from Pubmed. This is the search part.
-    start <- Sys.time()
-    entrez_ids <- get_pubmed_ids(HTML(query), api_key = api_key)
-    # 
-    # # Turn the results into a workable dataframe. Used later for NLP and clustering
-    pubmed_results <<- entrez_ids %>%
-      fetch_pubmed_data(retmax = input$n) %>%
-      articles_to_list() %>%
-      map(~ article_to_df(.x, max_chars = -1, getAuthors = T, getKeywords = T)) %>%
-      bind_rows() %>%
-      tibble()
-    end <- Sys.time()
-    print(end-start)
-
-    abstracts_df <<- pubmed_results %>%
-      group_by(pmid, doi, title, abstract, keywords, year, month, day, jabbrv) %>%
-      summarize(authors = paste0(lastname, ', ', substr(firstname, 1, 1), collapse = '; ')) %>%
-      filter(!is.na(abstract)) %>%
-      mutate(keywords = str_replace_all(keywords, '; ', ' ')) %>%
-      unite(text, c(title, abstract, keywords), sep = ' ', remove = F) %>%
-      mutate(text = clean.text(text),
-             link = paste0("https://doi.org/", doi)) %>%
-      ungroup()
-    # abstracts_df <<- read_rds(here::here('data/abstracts_df.rds'))
-    # Sys.sleep(1)
     
-    # Update the waiter to show that text is being analyzed now
-    w$update(html = analyze_wait_screen)
+    entrez_ids <<- get_pubmed_ids(HTML(query), api_key = api_key)
     
-    # Get tokens
-    tokens <<- tokenize.text(abstracts_df)
-    # tokens <<- read_rds(here::here('data/tokens.rds'))
+    if (entrez_ids$Count != '0') { 
+      pubmed_results <<- entrez_ids %>%
+        fetch_pubmed_data(retmax = input$n) %>%
+        articles_to_list() %>%
+        map(~ article_to_df(.x, max_chars = -1, getAuthors = T, getKeywords = F)) %>%
+        bind_rows() %>%
+        tibble()
+      
+      abstracts_df <<- pubmed_results %>%
+        group_by(pmid, doi, title, abstract, keywords, year, month, day, jabbrv) %>%
+        summarize(authors = paste0(lastname, ', ', substr(firstname, 1, 1), collapse = '; ')) %>%
+        filter(!is.na(abstract)) %>%
+        mutate(keywords = str_replace_all(keywords, '; ', ' ')) %>%
+        unite(text, c(title, abstract, keywords), sep = ' ', remove = F) %>%
+        mutate(text = clean.text(text),
+               link = paste0("https://doi.org/", doi)) %>%
+        ungroup()
+      
+      # Update the waiter to show that text is being analyzed now
+      w$update(html = analyze_wait_screen)
+      
+      # Get tokens
+      tokens <<- tokenize.text(abstracts_df)
+      # tokens <<- read_rds(here::here('data/tokens.rds'))
+      
+      # Get TF-IDF 
+      tfidf <- tokens %>% 
+        count(pmid, token) %>% 
+        bind_tf_idf(pmid, token, n)
+      
+      # Document-term matrix
+      dtm <- tfidf %>% 
+        cast_dtm(pmid, token, tf_idf) %>% 
+        tm::removeSparseTerms(0.99) 
+      
+      # Cosine similarity and distance matrices
+      cos_sim <- cosine.similarity(as.matrix(dtm))
+      dist_mat <<- as.dist(1 - cos_sim)
+      
+      # TODO: refine the number of clusters (k)
+      records <- nrow(abstracts_df)
+      k <- case_when(records <= 120 ~ ceiling(records/15), 
+                     TRUE ~ 8)
+      
+      hc <- factoextra::hcut(dist_mat, k = k, stand = T, method = 'ward.D2') 
+      
+      cluster_summary <<- get.cluster.summary(dtm, hc)
+      
+      rvs$top_terms <- cluster_summary$cluster_terms %>%
+        arrange(cluster) %>% 
+        group_by(cluster) %>%
+        arrange(-count) %>%
+        slice(1:5)
+      
+      # Multi-dimensional scaling
+      mds_points <- cmdscale(dist_mat, k = 2)
+      rvs$finaldata <- tibble(x = mds_points[, 1], y = mds_points[, 2]) %>% 
+        bind_cols(cluster_summary$cluster_docs) %>% 
+        left_join(abstracts_df, by = c('document' = 'pmid')) %>% 
+        left_join(rvs$top_terms %>% group_by(cluster) %>% summarize(terms = paste0(term, collapse = ', ')), by = 'cluster') %>% 
+        arrange(cluster) %>% 
+        group_by(cluster = factor(cluster)) %>% 
+        mutate(size = n())
+    }
     
-    # Get TF-IDF 
-    tfidf <- tokens %>% 
-      count(pmid, token) %>% 
-      bind_tf_idf(pmid, token, n)
-    
-    # Document-term matrix
-    dtm <- tfidf %>% 
-      cast_dtm(pmid, token, tf_idf) %>% 
-      tm::removeSparseTerms(0.99) 
-    
-    # Cosine similarity and distance matrices
-    cos_sim <- cosine.similarity(as.matrix(dtm))
-    dist_mat <<- as.dist(1 - cos_sim)
-    
-    # TODO: refine the number of clusters (k)
-    records <- nrow(abstracts_df)
-    k <- case_when(records <= 120 ~ ceiling(records/15), 
-                   TRUE ~ 8)
-
-    hc <- factoextra::hcut(dist_mat, k = k, stand = T, method = 'ward.D2') 
-    
-    cluster_summary <<- get.cluster.summary(dtm, hc)
-    
-    top_terms <<- cluster_summary$cluster_terms %>%
-      arrange(cluster) %>% 
-      group_by(cluster) %>%
-      arrange(-count) %>%
-      slice(1:5)
-    
-    # Multi-dimensional scaling
-    mds_points <- cmdscale(dist_mat, k = 2)
-    finaldata <<- tibble(x = mds_points[, 1], y = mds_points[, 2]) %>% 
-      bind_cols(cluster_summary$cluster_docs) %>% 
-      left_join(abstracts_df, by = c('document' = 'pmid')) %>% 
-      left_join(top_terms %>% group_by(cluster) %>% summarize(terms = paste0(term, collapse = ', ')), by = 'cluster') %>% 
-      arrange(cluster) %>% 
-      group_by(cluster = factor(cluster)) %>% 
-      mutate(size = n())
-    
-    # Hide the waiter
     w$hide()
+  
   })
   
-  # Make the word cloud repeatable
+  observeEvent(input$submit, {
+    # If search is successful show Results tab; otherwise show modal and go back to search results
+    if (entrez_ids$Count != "0") {
+      showTab(inputId = 'tabs', target = 'Results')
+      updateTabsetPanel(session = session, inputId = 'tabs', selected = 'Results')
+    } else if (entrez_ids$Count == '0') { 
+      showModal(modalDialog(
+        title = 'No results found',
+        "PubMed returned zero results for your query. Please check spelling or modify your search parameters.",
+        easyClose = F,
+        footer = actionButton('closeModal', 'OK')
+      ))
+      shinyjs::reset('submit')  
+      w$hide()
+    }
+  })
+  
+  observeEvent(input$closeModal, { 
+    removeModal()
+    showTab(inputId = 'tabs', target = 'Search')
+    updateTabsetPanel(session = session, inputId = 'tabs', selected = 'Search')
+  })
+
   
   output$wordcloud <- renderPlot({
     
-    term_matrix <- top_terms %>%
+    term_matrix <- rvs$top_terms %>%
       cast_tdm(term, cluster, count) %>%
       as.matrix()
 
     comparison.cloud(
       term_matrix, scale = c(0.9, 0.5), random.order = F, title.size = 2,
-      colors = brewer.pal(length(unique(top_terms$cluster)), 'Dark2'),
+      colors = brewer.pal(length(unique(rvs$top_terms$cluster)), 'Dark2'),
       title.bg.colors = 'white'
     )
-    # ggplot(top_terms, aes(label = term, color = factor(cluster)))  +
+    # ggplot(rvs$top_terms, aes(label = term, color = factor(cluster)))  +
     #   ggwordcloud::geom_text_wordcloud(
     #     eccentricity = 0.75, shape = 'circle', seed = 123, size = 4
     #   ) +
@@ -203,7 +214,7 @@ server <- function(input, output, session) {
       "const element = document.getElementById(pmid);", 
       "element.scrollIntoView({behavior: \"smooth\", inline: \"start\"});")
     )
-    plotdata <- finaldata %>% 
+    plotdata <- rvs$finaldata %>% 
       mutate(#onclick =  sprintf("window.open(\"%s%s\")", "https://doi.org/", doi),
              onclick = oc, 
              tooltip = paste0(str_extract(authors, '[^;]+'), ' et al. (', year, ')')
@@ -229,9 +240,9 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$submit, {
-    termspal <- function (x) brewer.pal(length(unique(finaldata$cluster)), 'Dark2')[x]
+    termspal <- function (x) brewer.pal(length(unique(rvs$finaldata$cluster)), 'Dark2')[x]
     
-    pmap(with(finaldata, list(document, cluster, title, link, authors, year, abstract, terms)),
+    pmap(with(rvs$finaldata, list(document, cluster, title, link, authors, year, abstract, terms)),
          function(document, cluster, title, link, authors, year, abstract, terms) {
            insertUI(
              '#results-table', 

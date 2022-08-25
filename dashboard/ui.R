@@ -52,7 +52,7 @@ ui <- navbarPage(
           h3("Smart PubMed Literature Finder", class = "center")
         )
       ),
-      # particlesjs::particles(target_id = 'particles-target', element_id = 'particles'),
+      particlesjs::particles(target_id = 'particles-target', element_id = 'particles'),
 
       fluidRow(
         column(
