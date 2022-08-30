@@ -14,7 +14,7 @@ pacman::p_load(
   tm, # for text processing, 
   ggiraph, # for interactive graphs
   wordcloud, 
-  ggforce
+  # ggforce
   # reactable # for interactive table
 )
 

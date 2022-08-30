@@ -222,7 +222,7 @@ server <- function(input, output, session) {
     
     plt <- ggplot(plotdata, aes(x = x, y = y, color = cluster)) + 
       geom_point_interactive(aes(tooltip = tooltip, data_id = document, onclick = onclick), alpha = 0.7, size = 4) +
-      ggforce::geom_mark_hull(aes(label = cluster), size = 0.3)+
+      # ggforce::geom_mark_hull(aes(label = cluster), size = 0.3)+
       scale_color_brewer(palette = 'Dark2') +
       theme_void() + 
       theme(legend.position = 'none')
