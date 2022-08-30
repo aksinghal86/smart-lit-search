@@ -126,7 +126,7 @@ ui <- navbarPage(
         )
       ),
       div(
-        style = "position:fixed;bottom:0px;right:30%;",
+        style = "position:fixed;bottom:0px;right:45%",
         p(
           class = "center",
           "Created by ",
@@ -134,8 +134,7 @@ ui <- navbarPage(
             "Ankur Singhal",
             href = "https://github.com/aksinghal86",
             target = "_blank"
-          ),
-          "of The Empirical Solutions Consulting, LLC."
+          )
         )
       )
     )
@@ -170,9 +169,10 @@ ui <- navbarPage(
       class = 'container', 
       fluidRow(
         tags$p(
-          'Created by Ankur Singhal as a fun side project to focus the scope of research when deep diving into a new topic.', 
-          'As environmental consultants at ', tags$a('Environmental Health & Engineering, Inc.,', href = "https://eheinc.com/", target = "_blank"),
-          'we are often asked to provide advice on environmental and human health impacts of chemicals. The idea for this tool came to help our team', 
+          'Created by ', a("Ankur Singhal",href = "https://github.com/aksinghal86", target = "_blank"), 
+          'as a fun side project to focus the scope of research when deep diving into a new topic.', 
+          'As an environmental consultant, I am often asked to provide advice on environmental and human health impacts of chemicals. ',
+          'The idea for this tool came to help our team', 
           'be more efficient when getting started on such projects.',
           br(),
           br(),

@@ -13,7 +13,7 @@ pacman::p_load(
   tidytext, # for text processing
   tm, # for text processing, 
   ggiraph, # for interactive graphs
-  wordcloud, 
+  wordcloud
   # ggforce
   # reactable # for interactive table
 )
